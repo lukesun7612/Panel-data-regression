@@ -13,8 +13,8 @@ import numpy as np
 import os
 import time
 
-input = 'D:/result/309'
-output = 'D:/result/paneldata_stages2.csv'
+input = 'D:/result/dataset1'
+output = 'D:/result/paneldata_hours1.csv'
 usecol = ['Speed', 'RPM', 'Accelerator pedal position', 'Engine fuel rate']
 date1 = ['2018-07-03', '2018-07-04', '2018-07-05', '2018-07-06', '2018-07-07', '2018-07-08']
 date2 = ['2018-06-27', '2018-06-28', '2018-06-29', '2018-06-30', '2018-07-01', '2018-07-02']
@@ -74,7 +74,6 @@ results = pd.DataFrame()
 count = 0
 for i, file in enumerate(os.listdir(input)):
     print(i, file)
-
     filepath = os.path.join(input, file)
     df = pd.read_csv(filepath, header=0)
     df = df.drop_duplicates(['GPS time'])
@@ -92,62 +91,25 @@ for i, file in enumerate(os.listdir(input)):
     # print(date)
 
     result = pd.DataFrame()
-    for k in date2:
+    for k in date1:
         df0 = df.loc[df['GPS time'].str.contains(k)]
         df0['GPS time'] = df0['GPS time'].astype('datetime64')
         df0 = df0.set_index('GPS time', drop=False)
-        df1 = df0[k: k+' 05:59:59']
-        df2 = df0[k+' 06:00:00': k+' 11:59:59']
-        df3 = df0[k+' 12:00:00': k+' 17:59:59']
-        df4 = df0[k+' 18:00:00': k+' 23:59:59']
-        res = pd.DataFrame(df1[usecol].mean()).T
-        res.insert(0, column='Range', value=Range(df1['Longitude'], df1['Latitude']))
-        res.insert(0, column='Brakes', value=avgBrake(df1))
-        res.insert(0, column='Fuel', value=diff_value(df1['Integral fuel consumption']))
-        res.insert(0, column='Kilo', value=diff_value(df1['Integral kilometer']))
-        res.insert(0, column='Harshdeceleration', value=hashdecelerate(df1))
-        res.insert(0, column='Harshacceleration', value=hashaccelerate(df1))
-        res.insert(0, column='Highspeedbrake', value=highspeedbrake(df1))
-        res.insert(0, column='Overspeed', value=overspeed(df1))
-        res.insert(0, column='Date',value=k+'before dawn')
-        res.insert(0, column='ID',value=file[:11])
-        result = pd.concat([result, res])
-        res = pd.DataFrame(df2[usecol].mean()).T
-        res.insert(0, column='Range', value=Range(df2['Longitude'], df2['Latitude']))
-        res.insert(0, column='Brakes', value=avgBrake(df2))
-        res.insert(0, column='Fuel', value=diff_value(df2['Integral fuel consumption']))
-        res.insert(0, column='Kilo', value=diff_value(df2['Integral kilometer']))
-        res.insert(0, column='Harshdeceleration', value=hashdecelerate(df2))
-        res.insert(0, column='Harshacceleration', value=hashaccelerate(df2))
-        res.insert(0, column='Highspeedbrake', value=highspeedbrake(df2))
-        res.insert(0, column='Overspeed', value=overspeed(df2))
-        res.insert(0, column='Date', value=k+'morning')
-        res.insert(0, column='ID', value=file[:11])
-        result = pd.concat([result, res])
-        res = pd.DataFrame(df3[usecol].mean()).T
-        res.insert(0, column='Range', value=Range(df3['Longitude'], df3['Latitude']))
-        res.insert(0, column='Brakes', value=avgBrake(df3))
-        res.insert(0, column='Fuel', value=diff_value(df3['Integral fuel consumption']))
-        res.insert(0, column='Kilo', value=diff_value(df3['Integral kilometer']))
-        res.insert(0, column='Harshdeceleration', value=hashdecelerate(df3))
-        res.insert(0, column='Harshacceleration', value=hashaccelerate(df3))
-        res.insert(0, column='Highspeedbrake', value=highspeedbrake(df3))
-        res.insert(0, column='Overspeed', value=overspeed(df3))
-        res.insert(0, column='Date', value=k+'afternoon')
-        res.insert(0, column='ID', value=file[:11])
-        result = pd.concat([result, res])
-        res = pd.DataFrame(df4[usecol].mean()).T
-        res.insert(0, column='Range', value=Range(df4['Longitude'], df4['Latitude']))
-        res.insert(0, column='Brakes', value=avgBrake(df4))
-        res.insert(0, column='Fuel', value=diff_value(df4['Integral fuel consumption']))
-        res.insert(0, column='Kilo', value=diff_value(df4['Integral kilometer']))
-        res.insert(0, column='Harshdeceleration', value=hashdecelerate(df4))
-        res.insert(0, column='Harshacceleration', value=hashaccelerate(df4))
-        res.insert(0, column='Highspeedbrake', value=highspeedbrake(df4))
-        res.insert(0, column='Overspeed', value=overspeed(df4))
-        res.insert(0, column='Date', value=k+'evening')
-        res.insert(0, column='ID', value=file[:11])
-        result = pd.concat([result, res])
+        for h in range(0,24):
+            df1 = df0[k+' %s:00:00'%(str(h)): k+' %s:59:59'%(str(h))]
+            res = pd.DataFrame(df1[usecol].mean()).T
+            res.insert(0, column='Range', value=Range(df1['Longitude'], df1['Latitude']))
+            res.insert(0, column='Brakes', value=avgBrake(df1))
+            res.insert(0, column='Fuel', value=diff_value(df1['Integral fuel consumption']))
+            res.insert(0, column='Kilo', value=diff_value(df1['Integral kilometer']))
+            res.insert(0, column='Harshdeceleration', value=hashdecelerate(df1))
+            res.insert(0, column='Harshacceleration', value=hashaccelerate(df1))
+            res.insert(0, column='Highspeedbrake', value=highspeedbrake(df1))
+            res.insert(0, column='Overspeed', value=overspeed(df1))
+            res.insert(0, column='Time', value=['%d:00:00'%(h) + '~%d:59:59'%(h)])
+            res.insert(0, column='Date', value=k)
+            res.insert(0, column='ID', value=file[:11])
+            result = pd.concat([result, res])
     if (result['Fuel'].sum()<10)|(result['Brakes'].sum()<10)|(len(result)<24):
         pass
     else:
