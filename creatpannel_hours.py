@@ -96,7 +96,7 @@ for i, file in enumerate(os.listdir(input)):
         df0['GPS time'] = df0['GPS time'].astype('datetime64')
         df0 = df0.set_index('GPS time', drop=False)
         for h in range(0,24):
-            df1 = df0[k+' %s:00:00'%(str(h)): k+' %s:59:59'%(str(h))]
+            df1 = df0[k+' %s:00:00'%(str(h).zfill(2)): k+' %s:59:59'%(str(h).zfill(2))]
             res = pd.DataFrame(df1[usecol].mean()).T
             res.insert(0, column='Range', value=Range(df1['Longitude'], df1['Latitude']))
             res.insert(0, column='Brakes', value=avgBrake(df1))
@@ -106,7 +106,7 @@ for i, file in enumerate(os.listdir(input)):
             res.insert(0, column='Harshacceleration', value=hashaccelerate(df1))
             res.insert(0, column='Highspeedbrake', value=highspeedbrake(df1))
             res.insert(0, column='Overspeed', value=overspeed(df1))
-            res.insert(0, column='Time', value=['%d:00:00'%(h) + '~%d:59:59'%(h)])
+            res.insert(0, column='Time', value=['%s:00:00'%(str(h).zfill(2)) + '-%s:59:59'%(str(h).zfill(2))])
             res.insert(0, column='Date', value=k)
             res.insert(0, column='ID', value=file[:11])
             result = pd.concat([result, res])
