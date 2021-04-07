@@ -67,19 +67,7 @@ def time2float(b):
     # timestr = [x.strftime("%h%m%s") for x in b]
     return pd.DataFrame(timedelta).diff(1)
 
-def abnormal_box(se, level=3):
-	'''
-	箱线图法获取速度阈值
-	:param se:
-	:param level:
-	:return:
-	'''
-	# Q2 = np.median(se)  # 中位数
-	Q1 = se.quantile(0.25)
-	Q3 = se.quantile(0.75)
-	IQR = Q3 - Q1
-	low, upp = Q1 - level * IQR, Q3 + level * IQR
-	return low, upp
+
 
 result = pd.DataFrame()
 count = 0

@@ -92,20 +92,12 @@ count = 0
 LOW, UP = [], []
 for i, file in enumerate(os.listdir(input)):
     print(i, file)
-
     filepath = os.path.join(input, file)
     df = pd.read_csv(filepath, header=0)
     df = df.drop_duplicates(['GPS time'])
     df = df.rename(columns={'Selected speed(km/h)': 'Speed'})
     df = df.loc[df['Longitude'].apply(lambda x: x > 0)].loc[df['Latitude'].apply(lambda y: y > 0)]
     df['Brake switch'] = df['Brake switch'].apply(lambda x: fun(x))
-    # df['journey'] = np.where(df['RPM'] >= 100, 1, 0)
-    # df = df.loc[df['journey'] == 1]
-    # df['highspeedbrake'] = np.where((df['Selected speed(km/h)'] > 90) & ((df['Brake times'] > 0)|(df['Brake switch'] > 0)),
-    #                                 1, 0)
-    # print(df['highspeedbrake'].sum())
-
-
     df['speeddiff'] = df['Speed'].diff(1)/3.6
     df['timediff'] = time2float(df['GPS time'].astype('datetime64'))
     df['accelerated speed'] = df.apply(lambda x: x['speeddiff']/x['timediff'],axis=1)
@@ -114,8 +106,7 @@ for i, file in enumerate(os.listdir(input)):
     # UP.append(upp)
     for j in range(len(df)):
         df.iloc[j,1] = df.iloc[j,1][0:10]
-        # print(df.iloc[j,1])
-    # print(df.loc[df['GPS time'] == '07-08',:])
+
     date = pd.unique(df['GPS time']).tolist()
     result = pd.DataFrame()
     for k in date:
