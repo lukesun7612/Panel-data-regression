@@ -14,7 +14,7 @@ from scipy.stats.mstats import winsorize
 import matplotlib.pyplot as plt
 
 # set input path and output path
-inputpath = 'D:/result/coefresult.csv'
+inputpath = 'D:/result/coefresult1.csv'
 outputpath = 'D:/博士/论文/JA3/Table/result3.xlsx'
 usecol = ['overspeed','highspeedbrake','harshacceleration','harshdeceleration']
 # Read the data and organize it
@@ -24,8 +24,9 @@ data.index.names = ['id']
 data = data.drop(data.tail(1).index)
 data.loc['id1'] = [0, 0, 0, 0]
 data = data.iloc[np.arange(-1, len(data)-1)]
+print(data)
 # winsorize the data with Package<winsorize>
-data_w = winsorize(data, limits=[0.01, 0.01], axis=0, inplace=True)
+data_w = winsorize(data.values, limits=[0.01, 0.01], axis=0, inplace=True)
 # Normalize the winsorized data, map into [0,5]
 scaler1 = MinMaxScaler(feature_range=(0,5))
 result1 = scaler1.fit_transform(data_w)

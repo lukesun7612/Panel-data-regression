@@ -55,17 +55,75 @@ def hashdecelerate(df, low=-0.556):
 def overspeed(df):
     df['overspeed'] = np.where(df['Speed']>100,1,0)
     return df['overspeed'].sum()
+
 def time2float(b):
     timedelta = []
     for x in b:
         if x:
-            a = x.strftime("%H%M%S")
+            a = x.strftime("%H%m%s")
             timedelta.append(int(a[0:2]) * 3600 + int(a[2:4]) * 60 + int(a[4:]))
-
         else:
             timedelta.append(0)
-    # timestr = [x.strftime("%h%m%s") for x in b]
     return pd.DataFrame(timedelta).diff(1)
+def getAbj(se):
+    '''
+    得到相邻数据的里程差和时间差信息
+    :param se: 里程信息，以Series的形式
+    :return: 行程差信息列表和时间差信息列表
+    '''
+    mile_dist = se[1:].values - se[:-1].values
+    mile_dist_time = (se[1:].index.values - se[:-1].index.values) / np.timedelta64(1, 's')
+    mile_dist = pd.Series(mile_dist)
+    mile_dist_time = pd.Series(mile_dist_time)
+    return mile_dist, mile_dist_time
+def split_journey(df, rotate=100, dura=5):
+    """
+    切分行程
+    :param df: 输入信息，这里是dataframe的形式，信息包括'发动机转速'
+    :param rotate: 转速阈值，超过阈值即认为在行程中
+    :param dura: 转速不大于0超过dura即认为行程结束
+    :return: 两部分：行程切分点列表和行程时间长度列表
+    """
+
+    df['GPS time'] = df['GPS time'].astype('datetime64')
+    df = df.set_index('GPS time', drop=False)
+    df['trip'] = np.where(rotate >= df['RPM'], 1, 0) # 将转速超过rotate的部分标记为行程内
+    biaoji, mile_dist_time1 = getAbj(df['trip'])
+
+
+    if df['trip'][0] == 1:
+        biaoji[0] = 1
+    else:
+        biaoji[0] = -1
+
+    if df['trip'][-1] == 1:
+        biaoji[-1] = -1
+    else:
+        biaoji[-1] = 1
+
+    biaoji = biaoji[biaoji != 0]
+    biao_idx = biaoji.index  # 1到-1时run
+
+    segment = []
+    segment_time = []
+    seg_start, seg_end = 0, 0
+    assign = True
+
+    for s, e in zip(biao_idx[:-1], biao_idx[1:]):
+        start = 0 if s == 0 else s + 1
+        duration = mile_dist_time1[start: e + 1].sum()
+        assert s != e
+        if biaoji[s] == 1 and assign:
+            seg_start = start
+            assign = False
+        elif biaoji[s] == -1:
+            if duration > dura * 60 and s != 0:
+                seg_end = start
+                seg_time = mile_dist_time1[seg_start: seg_end].sum() / 60
+                segment.append((seg_start, seg_end))
+                segment_time.append(seg_time)
+                assign = True
+    return segment, segment_time
 
 
 
@@ -81,6 +139,7 @@ for i, file in enumerate(os.listdir(input)):
     df = df.rename(columns={'Selected speed(km/h)': 'Speed'})
     df = df.loc[df['Longitude'].apply(lambda x: x > 0)].loc[df['Latitude'].apply(lambda y: y > 0)]
     df['Brake switch'] = df['Brake switch'].apply(lambda x: fun(x))
+
     df['speeddiff'] = df['Speed'].diff(1)/3.6
     df['timediff'] = time2float(df['GPS time'].astype('datetime64'))
     df['accelerated speed'] = df.apply(lambda x: x['speeddiff']/x['timediff'],axis=1)
