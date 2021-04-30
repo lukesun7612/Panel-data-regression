@@ -11,13 +11,8 @@
 import pandas as pd
 import numpy as np
 import os
-import time
 
-input = 'D:/result/dataset1'
-output = 'D:/result/paneldata_hours1.csv'
-usecol = ['Speed', 'RPM', 'Accelerator pedal position', 'Engine fuel rate']
-date1 = ['2018-07-03', '2018-07-04', '2018-07-05', '2018-07-06', '2018-07-07', '2018-07-08']
-date2 = ['2018-06-27', '2018-06-28', '2018-06-29', '2018-06-30', '2018-07-01', '2018-07-02']
+
 def fun(x):
     if x > 1:
         return 0
@@ -70,56 +65,66 @@ def time2float(b):
     # timestr = [x.strftime("%h%m%s") for x in b]
     return pd.DataFrame(timedelta).diff(1)
 
-results = pd.DataFrame()
-count = 0
-for i, file in enumerate(os.listdir(input)):
-    print(i, file)
-    filepath = os.path.join(input, file)
-    df = pd.read_csv(filepath, header=0)
-    df = df.drop_duplicates(['GPS time'])
-    df = df.rename(columns={'Selected speed(km/h)': 'Speed'})
-    df = df.loc[df['Longitude'].apply(lambda x: x > 0)].loc[df['Latitude'].apply(lambda y: y > 0)]
-    df['Brake switch'] = df['Brake switch'].apply(lambda x: fun(x))
-    df['speeddiff'] = df['Speed'].diff(1) / 3.6
-    df['timediff'] = time2float(df['GPS time'].astype('datetime64'))
-    df['accelerated speed'] = df.apply(lambda x: x['speeddiff'] / x['timediff'], axis=1)
-    # for j in range(len(df)):
-    #     df.iloc[j,1] = df.iloc[j,1][0:10]
-        # print(df.iloc[j,1])
-
-    # date = pd.unique(df['GPS time']).tolist()
-    # print(date)
-
-    result = pd.DataFrame()
-    for k in date1:
-        df0 = df.loc[df['GPS time'].str.contains(k)]
-        df0['GPS time'] = df0['GPS time'].astype('datetime64')
-        df0 = df0.set_index('GPS time', drop=False)
-        for h in range(0,24):
-            df1 = df0[k+' %s:00:00'%(str(h).zfill(2)): k+' %s:59:59'%(str(h).zfill(2))]
-            res = pd.DataFrame(df1[usecol].mean()).T
-            res.insert(0, column='Range', value=Range(df1['Longitude'], df1['Latitude']))
-            res.insert(0, column='Brakes', value=avgBrake(df1))
-            res.insert(0, column='Fuel', value=diff_value(df1['Integral fuel consumption']))
-            res.insert(0, column='Kilo', value=diff_value(df1['Integral kilometer']))
-            res.insert(0, column='Harshdeceleration', value=hashdecelerate(df1))
-            res.insert(0, column='Harshacceleration', value=hashaccelerate(df1))
-            res.insert(0, column='Highspeedbrake', value=highspeedbrake(df1))
-            res.insert(0, column='Overspeed', value=overspeed(df1))
-            res.insert(0, column='Time', value=['%s:00:00'%(str(h).zfill(2)) + '-%s:59:59'%(str(h).zfill(2))])
-            res.insert(0, column='Date', value=k)
-            res.insert(0, column='ID', value=file[:11])
-            result = pd.concat([result, res])
-    if (result['Fuel'].sum()<10)|(result['Brakes'].sum()<10)|(len(result)<24):
-        pass
-    else:
-        results = pd.concat([results, result])
-        count += 1
-    print(count)
-# results = results.loc[results['Kilo difference'].apply(lambda x: x > 5)].loc[results['Brakes'].apply(lambda y: y > 18)]
-results = results.set_index('ID')
-results = results.fillna(0)
 
 
 if __name__ == '__main__':
+    input1, input2 = 'D:/result/dataset1', 'D:/result/dataset2'
+    output1, output2 = 'D:/result/paneldata_hours1.csv', 'D:/result/paneldata_hours2.csv'
+    input = input1
+    output = output1
+    usecol = ['Speed', 'RPM', 'Accelerator pedal position', 'Engine fuel rate']
+    date1 = ['2018-07-03', '2018-07-04', '2018-07-05', '2018-07-06', '2018-07-07', '2018-07-08']
+    date2 = ['2018-06-27', '2018-06-28', '2018-06-29', '2018-06-30', '2018-07-01', '2018-07-02']
+    results = pd.DataFrame()
+    count = 0
+    for i, file in enumerate(os.listdir(input)):
+        print(i, file)
+        filepath = os.path.join(input, file)
+        df = pd.read_csv(filepath, header=0)
+        df = df.drop_duplicates(['GPS time'])
+        df = df.rename(columns={'Selected speed(km/h)': 'Speed'})
+        df = df.loc[df['Longitude'].apply(lambda x: x > 0)].loc[df['Latitude'].apply(lambda y: y > 0)]
+        df['Brake switch'] = df['Brake switch'].apply(lambda x: fun(x))
+        df['speeddiff'] = df['Speed'].diff(1) / 3.6
+        df['timediff'] = time2float(df['GPS time'].astype('datetime64'))
+        df['accelerated speed'] = df.apply(lambda x: x['speeddiff'] / x['timediff'], axis=1)
+        # for j in range(len(df)):
+        #     df.iloc[j,1] = df.iloc[j,1][0:10]
+        # print(df.iloc[j,1])
+
+        # date = pd.unique(df['GPS time']).tolist()
+        # print(date)
+        if input == input1:
+            date = date1
+        elif input == input2:
+            date = date2
+        result = pd.DataFrame()
+        for k in date:
+            df0 = df.loc[df['GPS time'].str.contains(k)]
+            df0['GPS time'] = df0['GPS time'].astype('datetime64')
+            df0 = df0.set_index('GPS time', drop=False)
+            for h in range(0, 24):
+                df1 = df0[k + ' %s:00:00' % (str(h).zfill(2)): k + ' %s:59:59' % (str(h).zfill(2))]
+                res = pd.DataFrame(df1[usecol].mean()).T
+                res.insert(0, column='Range', value=Range(df1['Longitude'], df1['Latitude']))
+                res.insert(0, column='Brakes', value=avgBrake(df1))
+                res.insert(0, column='Fuel', value=diff_value(df1['Integral fuel consumption']))
+                res.insert(0, column='Kilo', value=diff_value(df1['3-GPS kilometer(km)']))
+                res.insert(0, column='Harshdeceleration', value=hashdecelerate(df1))
+                res.insert(0, column='Harshacceleration', value=hashaccelerate(df1))
+                res.insert(0, column='Highspeedbrake', value=highspeedbrake(df1))
+                res.insert(0, column='Overspeed', value=overspeed(df1))
+                res.insert(0, column='Time', value=['%s:00:00' % (str(h).zfill(2)) + '-%s:59:59' % (str(h).zfill(2))])
+                res.insert(0, column='Date', value=k)
+                res.insert(0, column='ID', value=file[:11])
+                result = pd.concat([result, res])
+        if (result['Kilo'].sum() < 5) | (len(result) < 24):
+            pass
+        else:
+            results = pd.concat([results, result])
+            count += 1
+        print(count)
+    # results = results.loc[results['Kilo difference'].apply(lambda x: x > 5)].loc[results['Brakes'].apply(lambda y: y > 18)]
+    results = results.set_index('ID')
+    results = results.fillna(0)
     results.to_csv(output, mode='w')
